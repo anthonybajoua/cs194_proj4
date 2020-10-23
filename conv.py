@@ -10,7 +10,7 @@ from tqdm.auto import tqdm, trange
 
 class ConvNet(nn.Module):
 
-    def __init__(self, chan_list, kern_sizes, pool_sizes, hidden_sz, imsize, s=1, s_mp = 1, p=0, learn=1e-3):
+    def __init__(self, chan_list, kern_sizes, pool_sizes, hidden_sz, imsize, dropout=0,s=1, s_mp = 1, p=0, learn=1e-3):
         """
         :param chan_list: List of channels to convolve, first being input
         :param kern_sizes: List of kernel sizes to apply
@@ -26,6 +26,9 @@ class ConvNet(nn.Module):
             layers.append(nn.ReLU())
             layers.append(nn.MaxPool2d(pool_sizes[i - 1], stride = s_mp))
             curr = nxt
+
+        if dropout != 0:
+            layers.append(nn.Dropout(p))
             
         self.conv_net = nn.Sequential(*layers)
 
@@ -45,6 +48,9 @@ class ConvNet(nn.Module):
             else:
                 layers2.append(nn.Linear(hidden_sz[i-1], hidden_sz[i]))
             layers2.append(nn.ReLU())
+
+            if dropout != 0:
+                layers.append(nn.Dropout(p))
             
         layers2.append(nn.Linear(hidden_sz[-2], hidden_sz[-1]))
             
@@ -60,8 +66,8 @@ class ConvNet(nn.Module):
         self.device = None
         self.init_gpu()
 
-        self.linear.to(device)
-        self.conv_net.to(device)
+        self.linear.to(self.device)
+        self.conv_net.to(self.device)
 
 
 
@@ -72,12 +78,14 @@ class ConvNet(nn.Module):
 
         for e in trange(epochs, ascii=True, desc='Epoch', position=0, leave=True):
             for batch in tqdm(dl):
-                x = batch['im'].unsqueeze(1)
-                x = x.to(self.device).float()
+
+
+                x = batch['im'].to(self.device).unsqueeze(1).float()
+                self.train()
 
                         
                 preds = self.forward(x).to(self.device).squeeze()
-                y_true = batch['lm'].float().squeeze()
+                y_true = batch['lm'].to(self.device).float().squeeze()
 
                 if multi_pt:
                     y_true = y_true.flatten(start_dim=1)
@@ -95,26 +103,30 @@ class ConvNet(nn.Module):
                 except:
                     itr_eval = iter(dl_eval)
 
-                x_eval = eval_batch['im'].unsqueeze(1)
-                x_eval = x_eval.to(self.device).float()
+                x_eval = eval_batch['im'].to(self.device).unsqueeze(1).float()
                
 
+                self.eval()
+
                 y_eval = self.forward(x_eval).squeeze()
-                y_true = eval_batch['lm'].float().squeeze()
+                y_true = eval_batch['lm'].to(self.device).float().squeeze()
 
                 if multi_pt:
                     y_true = y_true.flatten(start_dim=1)
 
 
                 eval_loss = self.loss(y_eval, y_true)
-                print(eval_loss)
 
                 el.append(eval_loss)
 
         return tl, el
 
 
-            
+    def predict(self, x):
+        self.eval()
+        res = self.forward()
+        self.train()
+        return res
     
     def forward(self, x):
         """
