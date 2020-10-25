@@ -93,7 +93,6 @@ class ConvNet(nn.Module):
 
 
                 train_loss = self.update(preds, y_true)
-                print(train_loss)
 
                 tl.append(train_loss)
 
