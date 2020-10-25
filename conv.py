@@ -146,7 +146,7 @@ class ConvNet(nn.Module):
         loss.backward()
         self.opt.step()
 
-        return loss
+        return loss.item()
 
 
 
