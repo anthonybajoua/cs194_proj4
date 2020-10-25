@@ -115,11 +115,7 @@ class ConvNet(nn.Module):
         return tl, el
 
 
-    def predict(self, x):
-        self.eval()
-        res = self.forward()
-        self.train()
-        return res
+    
     
     def forward(self, x):
         """

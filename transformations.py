@@ -101,6 +101,19 @@ class FlipX(Transformation):
         return sample
 
 
+class Brightness(Transformation):
+    def __init__(self):
+        pass
+
+    def __call__(self, sample):
+        val = np.random.uniform(-.15, .15)
+        
+        m_bright = img.max()
+        mi_bright = img.min()
+
+        sample['im'] = np.clip(sample['im'] + val, mi_bright, m_bright)
+
+
 
 
 
