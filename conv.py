@@ -10,7 +10,7 @@ from tqdm.auto import tqdm, trange
 
 class ConvNet(nn.Module):
 
-    def __init__(self, chan_list, kern_sizes, pool_sizes, hidden_sz, imsize, dropout=0,s=1, s_mp = 1, p=0, learn=1e-3):
+    def __init__(self, chan_list, kern_sizes, pool_sizes, hidden_sz, imsize, s=1, s_mp = 1, p=0, learn=1e-3):
         """
         :param chan_list: List of channels to convolve, first being input
         :param kern_sizes: List of kernel sizes to apply
@@ -27,8 +27,7 @@ class ConvNet(nn.Module):
             layers.append(nn.MaxPool2d(pool_sizes[i - 1], stride = s_mp))
             curr = nxt
 
-        if dropout != 0:
-            layers.append(nn.Dropout(p))
+        
             
         self.conv_net = nn.Sequential(*layers)
 
@@ -49,8 +48,6 @@ class ConvNet(nn.Module):
                 layers2.append(nn.Linear(hidden_sz[i-1], hidden_sz[i]))
             layers2.append(nn.ReLU())
 
-            if dropout != 0:
-                layers.append(nn.Dropout(p))
             
         layers2.append(nn.Linear(hidden_sz[-2], hidden_sz[-1]))
             
@@ -81,7 +78,6 @@ class ConvNet(nn.Module):
 
 
                 x = batch['im'].to(self.device).unsqueeze(1).float()
-                self.train()
 
                         
                 preds = self.forward(x).to(self.device).squeeze()
@@ -105,8 +101,6 @@ class ConvNet(nn.Module):
                 x_eval = eval_batch['im'].to(self.device).unsqueeze(1).float()
                
 
-                self.eval()
-
                 y_eval = self.forward(x_eval).squeeze()
                 y_true = eval_batch['lm'].to(self.device).float().squeeze()
 
@@ -116,7 +110,7 @@ class ConvNet(nn.Module):
 
                 eval_loss = self.loss(y_eval, y_true)
 
-                el.append(eval_loss)
+                el.append(.item())
 
         return tl, el
 
